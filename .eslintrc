@@ -1,0 +1,21 @@
+{
+  "ecmaFeatures": {
+    "modules": true
+  },
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+  },
+  "parser": "babel-eslint",
+  "rules": {
+    "no-dupe-args": 2,
+    "no-dupe-keys": 2,
+    "no-duplicate-case": 2,
+    "no-undef": [2, { "typeof": true }],
+    "strict": [2, "never"]
+  },
+  "plugins": [
+  ]
+}
