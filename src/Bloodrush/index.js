@@ -28,26 +28,30 @@ let currentWidth = 0;
 let currentHeight = 0;
 
 var day = {
-  lightDirColor: 0x53e3e3e,
-  lightAmbientColor: 0x020202,
+  // lightDirColor: 0x53e3e3e,
+  // lightAmbientColor: 0x020202,
+  lightAmbientColor: 0x333333,
   background: colors.day.sky,
 };
 
 var night = {
-  lightDirColor: 0xdc0000,
+  // lightDirColor: 0xff1200,
   lightAmbientColor: 0x010101,
   background: 0x161616
 };
 
 var options = Object.assign(day, {
-  lightDirX: -1,
-  lightDirY: 0,
-  lightDirZ: 1,
+  // lightDirX: -1,
+  // lightDirY: 0,
+  // lightDirZ: 10,
+  cameraPositionX: 0,
+  cameraPositionY: 10,
+  cameraPositionZ: 0
 })
 
 var isNight = false;
 var isNightDirty = true;
-var isDebugging = false;
+var isDebugging = true;
 var isGUIDirty = true;
 
 var gui = new GUI();
@@ -71,8 +75,8 @@ renderer.setClearColor(options.background);
 renderer.setPixelRatio(window.devicePixelRatio);
 
 // -- lights
-let lightDir = new THREE.DirectionalLight( options.lightDirColor );
-lightDir.position.set(options.lightDirX, options.lightDirY, options.lightDirZ);
+// let lightDir = new THREE.DirectionalLight( options.lightDirColor );
+// lightDir.position.set(options.lightDirX, options.lightDirY, options.lightDirZ);
 
 let lightAmbient = new THREE.AmbientLight( options.lightAmbientColor );
 
@@ -98,23 +102,28 @@ function init() {
   width = window.innerWidth;
   height = window.innerHeight;
 
-  gui.addColor(options, 'lightDirColor');
+  // gui.addColor(options, 'lightDirColor');
   gui.addColor(options, 'lightAmbientColor');
   gui.addColor(options, 'background');
-  gui.add(options, 'lightDirX', -10, 10);
-  gui.add(options, 'lightDirY', -10, 10);
-  gui.add(options, 'lightDirZ', -10, 10);
+  // gui.add(options, 'lightDirX', -10, 10);
+  // gui.add(options, 'lightDirY', -10, 10);
+  // gui.add(options, 'lightDirZ', -10, 10);
+  gui.add(options, 'cameraPositionX', -50, 50);
+  gui.add(options, 'cameraPositionY', -50, 50);
+  gui.add(options, 'cameraPositionZ', -50, 50);
 
   if (!isDebugging) {
     gui.domElement.style.display = 'none';
   }
 
   camera.aspect = (width / height);
-  camera.position.z = 5;
+  camera.position.z = options.cameraPositionZ;
+  camera.position.y = options.cameraPositionY;
+  camera.lookAt(moon.position);
   camera.updateProjectionMatrix();
 
   scene.add(moon);
-  scene.add(lightDir);
+  // scene.add(lightDir);
   scene.add(lightAmbient);
 
   // -- events
@@ -150,7 +159,7 @@ function animate() {
 
 function renderNight () {
   if (isNightDirty) {
-    lightDir.color.set(night.lightDirColor);
+    // lightDir.color.set(night.lightDirColor);
     lightAmbient.color.set(night.lightAmbientColor);
     renderer.setClearColor(night.background);
 
@@ -160,7 +169,7 @@ function renderNight () {
 
 function renderDay () {
   if (isNightDirty) {
-    lightDir.color.set(day.lightDirColor);
+    // lightDir.color.set(day.lightDirColor);
     lightAmbient.color.set(day.lightAmbientColor);
     renderer.setClearColor(day.background);
 
@@ -169,9 +178,9 @@ function renderDay () {
 }
 
 function showGUI () {
-  lightDir.color.set(options.lightDirColor);
+  // lightDir.color.set(options.lightDirColor);
   lightAmbient.color.set(options.lightAmbientColor);
-  lightDir.position.set(options.lightDirX, options.lightDirY, options.lightDirZ);
+  // lightDir.position.set(options.lightDirX, options.lightDirY, options.lightDirZ);
   renderer.setClearColor(options.background);
 
   if (isGUIDirty) {
@@ -197,11 +206,24 @@ function render() {
   isNight ? renderNight() : renderDay();
   isDebugging ? showGUI() : hideGUI();
 
+  camera.position.y = options.cameraPositionY;
+  camera.position.z = options.cameraPositionZ;
+  camera.position.x = options.cameraPositionX;
+
+  // camera.position.set(new THREE.Vector3(
+  //   options.cameraPositionX,
+  //   options.cameraPositionY,
+  //   options.cameraPositionZ
+  // ));
+
+  camera.lookAt(moon.position);
+
   const t = now() * 0.0005;
-  lightDir.position.x = cos( t ) * 10;
-  lightDir.position.z = sin( t ) * 10;
+  // lightDir.position.x = cos( t ) * 10;
+  // lightDir.position.z = sin( t ) * 10;
 
   moon.render();
+  moon.rotate();
 
   renderer.clear();
   renderer.render(scene, camera);

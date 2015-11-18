@@ -69,9 +69,11 @@ export default class Moon extends THREE.Object3D {
     })
   }
 
-  render () {
+  rotate() {
     this.rotation.y += 0.005;
+  }
 
+  render () {
     const { material } = this.mesh;
 
     material.color.set(options.color);
