@@ -22,7 +22,6 @@ const { cos, sin } = Math
 const { now } = Date
 
 const container = document.createElement('div')
-const cloudContainers = Clouds.getCloudContainer(2);
 
 let width = 0
 let height = 0
@@ -99,8 +98,6 @@ function init() {
   document.body.appendChild(container)
 
   container.appendChild(renderer.domElement)
-
-  cloudContainers.forEach(c => container.appendChild(c))
 
   width = window.innerWidth
   height = window.innerHeight
@@ -183,10 +180,6 @@ function renderDay () {
     lightDir.color.set(day.lightDirColor)
     lightAmbient.color.set(day.lightAmbientColor)
     renderer.setClearColor(day.background)
-
-    cloudContainers.forEach(c => {
-      Clouds.setClassName(c, isNight)
-    })
 
     isNightDirty = false
   }
