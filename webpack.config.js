@@ -34,9 +34,9 @@ module.exports = {
     new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.bundle.js'),
     // new webpack.NoErrorsPlugin()
   ],
-  resolve: { 
+  resolve: {
     extensions: ['', '.js', '.css', '.glsl'],
-    modulesDirectories: ['src', 'node_modules'] 
+    modulesDirectories: ['src', 'node_modules']
   },
   postcss: function() {
     return [require('precss'), require('autoprefixer')]

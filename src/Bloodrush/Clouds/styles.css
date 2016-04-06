@@ -1,0 +1,39 @@
+@keyframes float {
+  0% {
+    transform: translate(0,0);
+  }
+  100% {
+    transform: translate(-5000vw,-1000vh);
+  }
+}
+
+.Container {
+  position: fixed;
+  opacity: 0.5;
+  top: 0;
+  width: 5000vw;
+  height: 5000vh;
+  background-size: 250vw auto;
+  animation: float 1500s infinite linear;
+}
+
+.Container:nth-of-type(1) {
+
+}
+
+.Container:nth-of-type(2) {
+  background-size: 290vw auto;
+  background-position: 1000px 10%;
+  animation-duration: 600s;
+}
+
+.Day {
+  composes: Container;
+  opacity: 0.4;
+  filter: brightness(150%);
+}
+
+.Night {
+  composes: Container;
+  filter: brightness();
+}

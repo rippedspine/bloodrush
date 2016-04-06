@@ -1,26 +1,26 @@
 html { box-sizing: border-box; }
 *, *:before, *:after { box-sizing: inherit; }
 
-html, 
-body { 
-  overflow: hidden; 
-  margin: 0; 
-  padding: 0; 
-  height: 100%; 
-  width: 100%; 
+html,
+body {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
 }
 
-body { 
-  color: #fff; 
+body {
+  color: #fff;
   /*font-family: 'Caesar Dressing', sans-serif; */
 }
 
-canvas { 
-  width: 100%; 
-  height: 100%; 
+canvas {
+  width: 100%;
+  height: 100%;
 }
 
-/*.title { 
+/*.title {
   margin: 0;
   font-size: 12vw;
   text-align: center;

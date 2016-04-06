@@ -21,11 +21,11 @@ const images = [
 var gui = new GUI();
 
 var blendings = [
-  THREE.NoBlending, 
-  THREE.NormalBlending, 
-  THREE.AdditiveBlending, 
-  THREE.SubtractiveBlending, 
-  THREE.MultiplyBlending, 
+  THREE.NoBlending,
+  THREE.NormalBlending,
+  THREE.AdditiveBlending,
+  THREE.SubtractiveBlending,
+  THREE.MultiplyBlending,
   THREE.AdditiveAlphaBlending
 ];
 
@@ -59,7 +59,7 @@ export default class Moon extends THREE.Object3D {
       gui.add(options, 'shininess', 0, 100);
       gui.add(options, 'blending', 0, blendings.length);
 
-      // gui.remember(options);
+      gui.remember(options);
       gui.domElement.style.display = 'none';
 
       this.mesh = new THREE.Mesh(geometry, material);
@@ -69,7 +69,7 @@ export default class Moon extends THREE.Object3D {
     })
   }
 
-  rotate() {
+  rotate () {
     this.rotation.y += 0.005;
   }
 
