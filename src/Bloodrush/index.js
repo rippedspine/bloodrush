@@ -13,8 +13,8 @@ import ColorCorrectionShader from '../shaders/ColorCorrection'
 import FXAAShader from '../shaders/FXAA'
 
 // Internal
-import Clouds from './Clouds'
 import Moon from './Moon'
+import CloudDome from './CloudDome'
 
 import { colors } from './config'
 
@@ -86,11 +86,17 @@ let renderModel = null
 
 // -- moon
 let moon = new Moon()
+let cloudDome = new CloudDome()
+let cloudDome2 = new CloudDome(4.5)
 
 export function bootstrap() {
   moon.load(() => {
-    init()
-    animate()
+    cloudDome.load(() => {
+      cloudDome2.load(() => {
+        init()
+        animate()
+      }, 4.2)
+    })
   })
 }
 
@@ -123,6 +129,8 @@ function init() {
   camera.updateProjectionMatrix()
 
   scene.add(moon)
+  scene.add(cloudDome)
+  scene.add(cloudDome2)
   scene.add(lightDir)
   scene.add(lightAmbient)
 
@@ -164,10 +172,6 @@ function renderNight () {
     lightDir.color.set(night.lightDirColor)
     lightAmbient.color.set(night.lightAmbientColor)
     renderer.setClearColor(night.background)
-
-    cloudContainers.forEach(c => {
-      Clouds.setClassName(c, isNight)
-    })
 
     isNightDirty = false
   }
@@ -232,6 +236,9 @@ function render() {
 
   moon.render()
   moon.rotate()
+
+  cloudDome.rotate()
+  cloudDome2.rotate()
 
   renderer.clear()
   renderer.render(scene, camera)
