@@ -1,5 +1,6 @@
 import { THREE } from 'three'
 import { GUI } from 'dat-gui'
+import TWEEN, { Tween } from 'tween.js'
 
 import RenderPass from '../lib/RenderPass'
 import ClearMaskPass from '../lib/ClearMaskPass'
@@ -7,14 +8,20 @@ import MaskPass from '../lib/MaskPass'
 import ShaderPass from '../lib/ShaderPass'
 import EffectComposer from '../lib/EffectComposer'
 
-// -- shaders
+// -- Shaders
 import BleachBypassShader from '../shaders/BleachBypass'
 import ColorCorrectionShader from '../shaders/ColorCorrection'
 import FXAAShader from '../shaders/FXAA'
 
-// Internal
+// -- Internal
 import Moon from './Moon'
 import CloudDome from './CloudDome'
+import Glow from './Glow'
+
+// -- Constans
+const DUSK_DAWN = 1000
+
+import { getHSV, tweenColors } from '../plugins/color'
 
 import { colors } from './config'
 
@@ -88,6 +95,7 @@ let renderModel = null
 let moon = new Moon()
 let cloudDome = new CloudDome()
 let cloudDome2 = new CloudDome(4.5)
+let moonGlow = new Glow()
 
 export function bootstrap() {
   moon.load(() => {
@@ -100,14 +108,7 @@ export function bootstrap() {
   })
 }
 
-function init() {
-  document.body.appendChild(container)
-
-  container.appendChild(renderer.domElement)
-
-  width = window.innerWidth
-  height = window.innerHeight
-
+function initGUI() {
   gui.addColor(options, 'lightDirColor').listen()
   gui.addColor(options, 'lightAmbientColor').listen()
   gui.addColor(options, 'background').listen()
@@ -121,6 +122,17 @@ function init() {
   if (!isDebugging) {
     gui.domElement.style.display = 'none'
   }
+}
+
+function init() {
+  document.body.appendChild(container)
+
+  container.appendChild(renderer.domElement)
+
+  width = window.innerWidth
+  height = window.innerHeight
+
+  initGUI()
 
   camera.aspect = (width / height)
   camera.position.z = options.cameraPositionZ
@@ -128,11 +140,25 @@ function init() {
   camera.lookAt(moon.position)
   camera.updateProjectionMatrix()
 
+  moonGlow.init({
+    camera,
+    target: moon,
+    size: 1.3,
+  })
+
   scene.add(moon)
+  scene.add(moonGlow)
   scene.add(cloudDome)
   scene.add(cloudDome2)
   scene.add(lightDir)
   scene.add(lightAmbient)
+
+  var renderTargetParams = {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBFormat,
+    stencilBuffer: true
+  }
 
   // -- events
   window.addEventListener('resize', onResize)
@@ -169,9 +195,32 @@ function renderNight () {
   if (isNightDirty) {
     Object.assign(options, night)
 
-    lightDir.color.set(night.lightDirColor)
-    lightAmbient.color.set(night.lightAmbientColor)
-    renderer.setClearColor(night.background)
+    // lightDir.color.set(night.lightDirColor)
+    // lightAmbient.color.set(night.lightAmbientColor)
+    // renderer.setClearColor(night.background)
+
+    var bgTween = tweenColors(
+      day.background,
+      night.background,
+      DUSK_DAWN,
+      renderer.setClearColor
+    )
+    var lightDirTween = tweenColors(
+      day.lightDirColor,
+      night.lightDirColor,
+      DUSK_DAWN,
+      (color) => lightDir.color.set(color)
+    )
+    var lightAmbientTween = tweenColors(
+      day.lightAmbientColor,
+      night.lightAmbientColor,
+      DUSK_DAWN,
+      (color) => lightAmbient.color.set(color)
+    )
+
+    bgTween.start()
+    lightDirTween.start()
+    lightAmbientTween.start()
 
     isNightDirty = false
   }
@@ -181,9 +230,28 @@ function renderDay () {
   if (isNightDirty) {
     Object.assign(options, day)
 
-    lightDir.color.set(day.lightDirColor)
-    lightAmbient.color.set(day.lightAmbientColor)
-    renderer.setClearColor(day.background)
+    var bgTween = tweenColors(
+      night.background,
+      day.background,
+      DUSK_DAWN,
+      renderer.setClearColor
+    )
+    var lightDirTween = tweenColors(
+      night.lightDirColor,
+      day.lightDirColor,
+      DUSK_DAWN,
+      (color) => lightDir.color.set(color)
+    )
+    var lightAmbientTween = tweenColors(
+      night.lightAmbientColor,
+      day.lightAmbientColor,
+      DUSK_DAWN,
+      (color) => lightAmbient.color.set(color)
+    )
+
+    bgTween.start()
+    lightDirTween.start()
+    lightAmbientTween.start()
 
     isNightDirty = false
   }
@@ -215,6 +283,8 @@ function render() {
     currentHeight = height
   }
 
+  TWEEN.update()
+
   isNight ? renderNight() : renderDay()
   isDebugging ? showGUI() : hideGUI()
 
@@ -236,6 +306,7 @@ function render() {
 
   moon.render()
   moon.rotate()
+  moonGlow.pulse()
 
   cloudDome.rotate()
   cloudDome2.rotate()

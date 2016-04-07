@@ -1,5 +1,4 @@
 import THREE from 'three'
-import styles from './styles.css'
 
 import textureCloud from './textures/cloud.png'
 
@@ -23,7 +22,7 @@ export default class CloudDome extends THREE.Object3D {
       const material = new THREE.MeshLambertMaterial({
         map: cloudMap,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.4,
         depthWrite: false,
         // color: new THREE.Color(0x00ff00),
       })
