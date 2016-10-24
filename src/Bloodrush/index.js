@@ -3,6 +3,7 @@ import { GUI } from 'dat-gui'
 import TWEEN, { Tween } from 'tween.js'
 import yo from 'yo-yo'
 import { EventEmitter } from 'events'
+var SunCalc = require('suncalc')
 
 import RenderPass from '../postprocessing/RenderPass'
 import ClearMaskPass from '../postprocessing/ClearMaskPass'
@@ -32,19 +33,49 @@ const { now } = Date
 
 const container = document.createElement('div')
 
+const bgGrain = document.createElement('div')
+bgGrain.className = 'gg'
+
 const cal = new EventEmitter()
 
-const calEl = yo`<div style='position: absolute; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.2)'></div>`
+const calEl = yo`<div style='z-index: 2; position: fixed; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.2)'></div>`
+
+const calInfo = yo`
+  <div style='position: fixed; top: 10px; right: 10px; mix-blend-mode: overlay;'>
+    10% Waxing Gibbous
+  </div>
+`
 
 calEl.addEventListener('mousedown', (e) => cal.emit('down', e))
-calEl.addEventListener('mouseover', (e) => cal.emit('over', e))
+calEl.addEventListener('mousemove', (e) => cal.emit('move', e))
 calEl.addEventListener('mouseup', (e) => cal.emit('up', e))
 
-cal.on('down', console.log.bind(console, 'down'))
-cal.on('up', console.log.bind(console, 'up'))
-cal.on('over', console.log.bind(console, 'over'))
+const getRadians = (phase) => ((phase * 360) + 90) * (Math.PI / 180)
+
+const setLightPositionFromPhase = (phase) => {
+  lightDir.position.x = 10 * cos(getRadians(phase))
+  lightDir.position.z = 10 * sin(getRadians(phase))
+}
+
+document.addEventListener('mousemove', (event) => {
+  camera.position.y = cos(getRadians((event.clientY / (height * 2)) * 0.01)) * 5
+  camera.position.z = sin(getRadians((event.clientX / (width * 2)) * 0.01)) * 5
+  camera.position.x = cos(getRadians((event.clientX / (width * 2)) * 0.01)) * 5
+})
+
+const onMouseMove = (event) => {
+  const x = event.clientX / width
+  setLightPositionFromPhase(x)
+  // moon.rotation.y = sin(getRadians(x * 0.1)) * -1.5
+}
+
+// cal.on('down', handleMouseDown)
+// cal.on('up', handleMouseUp)
+cal.on('move', onMouseMove)
 
 container.appendChild(calEl)
+container.appendChild(calInfo)
+container.appendChild(bgGrain)
 
 let width = 0
 let height = 0
@@ -64,9 +95,6 @@ var night = {
 }
 
 var options = Object.assign({}, day, {
-  lightDirX: -1,
-  lightDirY: 0,
-  lightDirZ: 10,
   cameraPositionX: 0,
   cameraPositionY: 0,
   cameraPositionZ: 5
@@ -99,7 +127,7 @@ renderer.setPixelRatio(window.devicePixelRatio)
 
 // -- lights
 let lightDir = new THREE.DirectionalLight(options.lightDirColor)
-lightDir.position.set(options.lightDirX, options.lightDirY, options.lightDirZ)
+setLightPositionFromPhase(SunCalc.getMoonIllumination(new Date()).phase)
 
 let lightAmbient = new THREE.AmbientLight(options.lightAmbientColor)
 
@@ -128,9 +156,6 @@ function initGUI () {
   gui.addColor(options, 'lightDirColor').listen()
   gui.addColor(options, 'lightAmbientColor').listen()
   gui.addColor(options, 'background').listen()
-  gui.add(options, 'lightDirX', -10, 10)
-  gui.add(options, 'lightDirY', -10, 10)
-  gui.add(options, 'lightDirZ', -10, 10)
   gui.add(options, 'cameraPositionX', -50, 50)
   gui.add(options, 'cameraPositionY', -50, 50)
   gui.add(options, 'cameraPositionZ', -50, 50)
@@ -276,7 +301,7 @@ function renderDay () {
 function showGUI () {
   lightDir.color.set(options.lightDirColor)
   lightAmbient.color.set(options.lightAmbientColor)
-  lightDir.position.set(options.lightDirX, options.lightDirY, options.lightDirZ)
+  // lightDir.position.set(options.lightDirX, options.lightDirY, options.lightDirZ)
   renderer.setClearColor(options.background)
 
   if (isGUIDirty) {
@@ -304,9 +329,9 @@ function render () {
   isNight ? renderNight() : renderDay()
   isDebugging ? showGUI() : hideGUI()
 
-  camera.position.y = options.cameraPositionY
-  camera.position.z = options.cameraPositionZ
-  camera.position.x = options.cameraPositionX
+  // camera.position.y = options.cameraPositionY
+  // camera.position.z = options.cameraPositionZ
+  // camera.position.x = options.cameraPositionX
 
   // camera.position.set(new THREE.Vector3(
   //   options.cameraPositionX,
@@ -316,9 +341,11 @@ function render () {
 
   camera.lookAt(moon.position)
 
-  const t = now() * 0.0005
-  lightDir.position.x = cos(t) * 10
-  lightDir.position.z = sin(t) * 10
+  // const t = now() * 0.0005
+  // lightDir.position.x = cos(t) * 10
+  // lightDir.position.z = sin(t) * 10
+
+  // console.log(lightDir.position)
 
   moon.render()
   moon.rotate()

@@ -70,7 +70,7 @@ export default class Moon extends THREE.Object3D {
   }
 
   rotate () {
-    this.rotation.y += 0.005;
+    this.rotation.y += 0.0003;
   }
 
   render () {

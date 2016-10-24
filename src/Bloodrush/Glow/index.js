@@ -60,7 +60,7 @@ export default class Glow extends THREE.Object3D {
   }
 
   pulse() {
-    this.tick += 0.05
-    this.position.z = this.origin.z + (sin(this.tick) * 0.25)
+    this.tick += 0.02
+    this.position.z = this.origin.z + (sin(this.tick) * 0.125)
   }
 }
