@@ -1,6 +1,8 @@
 import THREE from 'three';
 import { GUI } from 'dat-gui';
 
+import loader from '../../plugins/loader'
+
 import { default as vertexShader } from './shader.vert.glsl';
 import { default as fragmentShader } from './shader.frag.glsl';
 
@@ -10,8 +12,6 @@ const { now } = Date;
 // -- textures
 import textureMoon from './textures/moon.jpg';
 import textureNormal from './textures/normal.jpg';
-
-const loader = new THREE.TextureLoader();
 
 const images = [
   { url: textureMoon, name: 'moon' },
@@ -40,7 +40,7 @@ var options = {
 
 export default class Moon extends THREE.Object3D {
   load (onLoaded) {
-    load((textures) => {
+    loader(images, (textures) => {
       const material = new THREE.MeshPhongMaterial({
         color: options.color,
         specular: options.specular,
@@ -79,25 +79,4 @@ export default class Moon extends THREE.Object3D {
     material.color.set(options.color);
     material.specular.set(options.color);
   }
-}
-
-function load (onLoaded) {
-  const total = images.length;
-  var completed = 0;
-  var textures = {};
-
-  const onLoad = (name, texture) => {
-    textures[name] = texture;
-    if (completed++ === total - 1) {
-      onLoaded(textures);
-    }
-  }
-
-  images.forEach(image => {
-    loader.load(image.url, onLoad.bind(this, image.name), (xhr) => {
-      console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-    }, (xhr) => {
-      console.log('Loading errored');
-    })
-  })
 }

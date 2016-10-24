@@ -1,12 +1,14 @@
 import { THREE } from 'three'
 import { GUI } from 'dat-gui'
 import TWEEN, { Tween } from 'tween.js'
+import yo from 'yo-yo'
+import { EventEmitter } from 'events'
 
-import RenderPass from '../lib/RenderPass'
-import ClearMaskPass from '../lib/ClearMaskPass'
-import MaskPass from '../lib/MaskPass'
-import ShaderPass from '../lib/ShaderPass'
-import EffectComposer from '../lib/EffectComposer'
+import RenderPass from '../postprocessing/RenderPass'
+import ClearMaskPass from '../postprocessing/ClearMaskPass'
+import MaskPass from '../postprocessing/MaskPass'
+import ShaderPass from '../postprocessing/ShaderPass'
+import EffectComposer from '../postprocessing/EffectComposer'
 
 // -- Shaders
 import BleachBypassShader from '../shaders/BleachBypass'
@@ -19,7 +21,7 @@ import CloudDome from './CloudDome'
 import Glow from './Glow'
 
 // -- Constans
-const DUSK_DAWN = 1000
+const DURATION = 1000
 
 import { getHSV, tweenColors } from '../plugins/color'
 
@@ -30,6 +32,20 @@ const { now } = Date
 
 const container = document.createElement('div')
 
+const cal = new EventEmitter()
+
+const calEl = yo`<div style='position: absolute; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.2)'></div>`
+
+calEl.addEventListener('mousedown', (e) => cal.emit('down', e))
+calEl.addEventListener('mouseover', (e) => cal.emit('over', e))
+calEl.addEventListener('mouseup', (e) => cal.emit('up', e))
+
+cal.on('down', console.log.bind(console, 'down'))
+cal.on('up', console.log.bind(console, 'up'))
+cal.on('over', console.log.bind(console, 'over'))
+
+container.appendChild(calEl)
+
 let width = 0
 let height = 0
 let currentWidth = 0
@@ -38,7 +54,7 @@ let currentHeight = 0
 var day = {
   lightDirColor: 0x53e3e3e,
   lightAmbientColor: 0x020202,
-  background: colors.day.sky,
+  background: colors.day.sky
 }
 
 var night = {
@@ -97,7 +113,7 @@ let cloudDome = new CloudDome()
 let cloudDome2 = new CloudDome(4.5)
 let moonGlow = new Glow()
 
-export function bootstrap() {
+export function bootstrap () {
   moon.load(() => {
     cloudDome.load(() => {
       cloudDome2.load(() => {
@@ -108,7 +124,7 @@ export function bootstrap() {
   })
 }
 
-function initGUI() {
+function initGUI () {
   gui.addColor(options, 'lightDirColor').listen()
   gui.addColor(options, 'lightAmbientColor').listen()
   gui.addColor(options, 'background').listen()
@@ -124,7 +140,7 @@ function initGUI() {
   }
 }
 
-function init() {
+function init () {
   document.body.appendChild(container)
 
   container.appendChild(renderer.domElement)
@@ -143,7 +159,7 @@ function init() {
   moonGlow.init({
     camera,
     target: moon,
-    size: 1.3,
+    size: 1.3
   })
 
   scene.add(moon)
@@ -165,7 +181,7 @@ function init() {
   window.addEventListener('keydown', onKeyDown)
 }
 
-function onResize() {
+function onResize () {
   const { innerWidth, innerHeight } = window
 
   camera.aspect = innerWidth / innerHeight
@@ -174,7 +190,7 @@ function onResize() {
   renderer.setSize(innerWidth, innerHeight)
 }
 
-function onKeyDown(event) {
+function onKeyDown (event) {
   if (event.keyCode === 78) {
     isNightDirty = true
     isNight = !isNight
@@ -186,7 +202,7 @@ function onKeyDown(event) {
   }
 }
 
-function animate() {
+function animate () {
   requestAnimationFrame(animate)
   render()
 }
@@ -202,19 +218,19 @@ function renderNight () {
     var bgTween = tweenColors(
       day.background,
       night.background,
-      DUSK_DAWN,
+      DURATION,
       renderer.setClearColor
     )
     var lightDirTween = tweenColors(
       day.lightDirColor,
       night.lightDirColor,
-      DUSK_DAWN,
+      DURATION,
       (color) => lightDir.color.set(color)
     )
     var lightAmbientTween = tweenColors(
       day.lightAmbientColor,
       night.lightAmbientColor,
-      DUSK_DAWN,
+      DURATION,
       (color) => lightAmbient.color.set(color)
     )
 
@@ -233,19 +249,19 @@ function renderDay () {
     var bgTween = tweenColors(
       night.background,
       day.background,
-      DUSK_DAWN,
+      DURATION,
       renderer.setClearColor
     )
     var lightDirTween = tweenColors(
       night.lightDirColor,
       day.lightDirColor,
-      DUSK_DAWN,
+      DURATION,
       (color) => lightDir.color.set(color)
     )
     var lightAmbientTween = tweenColors(
       night.lightAmbientColor,
       day.lightAmbientColor,
-      DUSK_DAWN,
+      DURATION,
       (color) => lightAmbient.color.set(color)
     )
 
@@ -276,7 +292,7 @@ function hideGUI () {
   }
 }
 
-function render() {
+function render () {
   if (currentWidth !== width || currentHeight !== height) {
     renderer.setSize(width, height, false)
     currentWidth = width
@@ -301,12 +317,12 @@ function render() {
   camera.lookAt(moon.position)
 
   const t = now() * 0.0005
-  lightDir.position.x = cos( t ) * 10
-  lightDir.position.z = sin( t ) * 10
+  lightDir.position.x = cos(t) * 10
+  lightDir.position.z = sin(t) * 10
 
   moon.render()
   moon.rotate()
-  moonGlow.pulse()
+  // moonGlow.pulse()
 
   cloudDome.rotate()
   cloudDome2.rotate()
