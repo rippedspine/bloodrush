@@ -34,17 +34,55 @@ const { now } = Date
 const container = document.createElement('div')
 
 const bgGrain = document.createElement('div')
-bgGrain.className = 'gg'
+// bgGrain.className = 'gg'
 
 const cal = new EventEmitter()
 
-const calEl = yo`<div style='z-index: 2; position: fixed; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.2)'></div>`
+const moonIllumination = SunCalc.getMoonIllumination(new Date())
 
-const calInfo = yo`
-  <div style='position: fixed; top: 10px; right: 10px; mix-blend-mode: overlay;'>
-    10% Waxing Gibbous
+const getMoonPhase = (phase) => {
+  if (phase >= 0.1 && phase < 0.2) return 'Waning Gibbous'
+  if (phase >= 0.2 && phase < 0.3) return 'Last Quarter'
+  if (phase >= 0.3 && phase < 0.45) return 'Waning Crescent'
+  if (phase >= 0.45 && phase < 0.55) return 'New Moon'
+  if (phase >= 0.55 && phase < 0.7) return 'Waxing Crescent'
+  if (phase >= 0.7 && phase < 0.8) return 'First Quarter'
+  if (phase >= 0.8 && phase < 0.9) return 'Waxing Gibbous'
+  return 'Full Moon'
+}
+
+const getStartOfDay = (date) => {
+  const tmpDate = date
+  tmpDate.setHours(0)
+  tmpDate.setMinutes(0)
+  tmpDate.setSeconds(0)
+  return tmpDate
+}
+
+const START_OF_DAY = getStartOfDay(new Date())
+const DAY_IN_MS = 24 * 60 * 60 * 1000
+
+const days = new Array(30).fill(undefined).map((_, index) => {
+  return new Date(+START_OF_DAY + (index * DAY_IN_MS))
+})
+
+console.log(days)
+
+const calEl = yo`
+  <div style='z-index: 2; position: fixed; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.2)'>
+    ${days.map(day => (
+      yo`<div>${day}</div>`
+    ))}
   </div>
 `
+
+const calInfo = (moonPhase) => (yo`
+  <div style='position: fixed; top: 10px; right: 10px; mix-blend-mode: overlay;'>
+    ${moonPhase}
+  </div>
+`)
+
+const calInfoEl = calInfo(moonIllumination.phase)
 
 calEl.addEventListener('mousedown', (e) => cal.emit('down', e))
 calEl.addEventListener('mousemove', (e) => cal.emit('move', e))
@@ -55,6 +93,16 @@ const getRadians = (phase) => ((phase * 360) + 90) * (Math.PI / 180)
 const setLightPositionFromPhase = (phase) => {
   lightDir.position.x = 10 * cos(getRadians(phase))
   lightDir.position.z = 10 * sin(getRadians(phase))
+
+  yo.update(calInfoEl, calInfo(getMoonPhase(phase)))
+}
+
+const getNewCameraPosition = (x, y) => {
+  return {
+    y: cos(getRadians((y / (height * 2)) * 0.01)) * 5,
+    z: sin(getRadians((x / (width * 2)) * 0.01)) * 5,
+    x: cos(getRadians((x / (width * 2)) * 0.01)) * 5
+  }
 }
 
 document.addEventListener('mousemove', (event) => {
@@ -74,7 +122,7 @@ const onMouseMove = (event) => {
 cal.on('move', onMouseMove)
 
 container.appendChild(calEl)
-container.appendChild(calInfo)
+container.appendChild(calInfoEl)
 container.appendChild(bgGrain)
 
 let width = 0
@@ -127,7 +175,7 @@ renderer.setPixelRatio(window.devicePixelRatio)
 
 // -- lights
 let lightDir = new THREE.DirectionalLight(options.lightDirColor)
-setLightPositionFromPhase(SunCalc.getMoonIllumination(new Date()).phase)
+setLightPositionFromPhase(moonIllumination.phase)
 
 let lightAmbient = new THREE.AmbientLight(options.lightAmbientColor)
 
