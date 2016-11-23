@@ -1,37 +1,33 @@
-import THREE from 'three'
+import * as THREE from 'three'
 
-import loader from '../../plugins/loader'
+import { load } from '../../plugins/textureLoader'
 
 import textureCloud from './textures/cloud.png'
-
-const { cos, sin } = Math
-const { now } = Date
 
 const images = [
   { url: textureCloud, name: 'cloud' }
 ]
 
 export default class CloudDome extends THREE.Object3D {
-  load (cb, size = 4) {
-    loader(images, textures => {
+  load (size = 4) {
+    return load(images).then((textures) => {
       var cloudMap = textures.cloud
 
       cloudMap.wrapS = cloudMap.wrapT = THREE.RepeatWrapping
-      cloudMap.repeat.set(5,5)
+      cloudMap.repeat.set(5, 5)
 
       const material = new THREE.MeshLambertMaterial({
         map: cloudMap,
         transparent: true,
         opacity: 0.4,
-        depthWrite: false,
+        depthWrite: false
       })
 
       const geometry = new THREE.SphereGeometry(size, 50, 50)
 
-      this.mesh = new THREE.Mesh(geometry, material)
-      this.add(this.mesh)
+      this.add(new THREE.Mesh(geometry, material))
 
-      cb()
+      return this
     })
   }
 

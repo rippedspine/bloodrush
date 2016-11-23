@@ -1,19 +1,19 @@
-import THREE from 'three'
+import * as THREE from 'three'
 
 import shaderVert from './shader.vert.glsl'
 import shaderFrag from './shader.frag.glsl'
 
 const { sin } = Math
 
-var count = 0
-
 export default class Glow extends THREE.Object3D {
-  init({
+  constructor ({
     camera,
     target,
     size = 1.5,
-    pushBack = true,
+    pushBack = true
   }) {
+    super()
+
     this.size = size
 
     const uniforms = {
@@ -33,11 +33,13 @@ export default class Glow extends THREE.Object3D {
       opacity: 0.3
     })
 
+    console.log(target)
+
     const geometry = target.mesh.geometry.clone()
 
     geometry.dynamic = true
 
-    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh = new THREE.Mesh(geometry, material)
 
     this.position.x = target.mesh.position.x
     this.position.y = target.mesh.position.y
@@ -56,10 +58,10 @@ export default class Glow extends THREE.Object3D {
     this.scale.multiplyScalar(2.8)
 
     this.add(this.mesh)
-    this.tick = 0;
+    this.tick = 0
   }
 
-  pulse() {
+  pulse () {
     this.tick += 0.02
     this.position.z = this.origin.z + (sin(this.tick) * 0.125)
   }

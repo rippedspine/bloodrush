@@ -1,4 +1,4 @@
-import './styles.css';
-import { bootstrap } from './Bloodrush';
+import './styles.css'
+import { init } from './Bloodrush'
 
-bootstrap();
+init()

@@ -1,10 +1,10 @@
-import { EventEmitter } from 'events'
-import { extend } from 'lodash'
+// import { EventEmitter } from 'events'
+// import { extend } from 'lodash'
 import THREE from 'three'
 
 const textureLoader = new THREE.TextureLoader()
 
-function loader(images, cb) {
+function loader (images, cb) {
   const total = images.length
   var completed = 0
   var textures = {}
@@ -19,9 +19,9 @@ function loader(images, cb) {
 
   images.forEach(image => {
     textureLoader.load(image.url, texture => onLoad(texture, image.name), (xhr) => {
-      console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+      console.log((xhr.loaded / xhr.total * 100) + '% loaded')
     }, (xhr) => {
-      console.log('Loading errored');
+      console.log('Loading errored')
     })
   })
 }

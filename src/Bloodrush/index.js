@@ -1,411 +1,156 @@
-import { THREE } from 'three'
-import { GUI } from 'dat-gui'
-import TWEEN, { Tween } from 'tween.js'
-// import yo from 'yo-yo'
+import * as THREE from 'three'
 import { EventEmitter } from 'events'
+import TWEEN from 'tween.js'
+import raf from 'raf'
 
-import Illumination from './illumination'
-// var SunCalc = require('suncalc')
+import getStage from './stage'
+import getControls from './controls'
 
-import RenderPass from '../postprocessing/RenderPass'
-import ClearMaskPass from '../postprocessing/ClearMaskPass'
-import MaskPass from '../postprocessing/MaskPass'
-import ShaderPass from '../postprocessing/ShaderPass'
-import EffectComposer from '../postprocessing/EffectComposer'
+// Plugins
+import { tweenColors } from '../plugins/color'
 
-// -- Shaders
-import BleachBypassShader from '../shaders/BleachBypass'
-import ColorCorrectionShader from '../shaders/ColorCorrection'
-import FXAAShader from '../shaders/FXAA'
-
-// -- Internal
+// Internal
 import Moon from './Moon'
 import CloudDome from './CloudDome'
-import Glow from './Glow'
+// import Glow from './Glow'
 
-// -- Constans
+import config from './config'
+
+// Constants
 const DURATION = 1000
+const { sin, cos, PI } = Math
 
-import { getHSV, tweenColors } from '../plugins/color'
-
-import { colors } from './config'
-
-const { cos, sin } = Math
-const { now } = Date
-
-const container = document.createElement('div')
-
-// const bgGrain = document.createElement('div')
-// bgGrain.className = 'gg'
-
-// const cal = new EventEmitter()
-
-// const moonIllumination = SunCalc.getMoonIllumination(new Date())
-
-// const getMoonPhase = (phase) => {
-//   if (phase >= 0.1 && phase < 0.2) return 'Waning Gibbous'
-//   if (phase >= 0.2 && phase < 0.3) return 'Last Quarter'
-//   if (phase >= 0.3 && phase < 0.45) return 'Waning Crescent'
-//   if (phase >= 0.45 && phase < 0.55) return 'New Moon'
-//   if (phase >= 0.55 && phase < 0.7) return 'Waxing Crescent'
-//   if (phase >= 0.7 && phase < 0.8) return 'First Quarter'
-//   if (phase >= 0.8 && phase < 0.9) return 'Waxing Gibbous'
-//   return 'Full Moon'
-// }
-
-// const getStartOfDay = (date) => {
-//   const tmpDate = date
-//   tmpDate.setHours(0)
-//   tmpDate.setMinutes(0)
-//   tmpDate.setSeconds(0)
-//   return tmpDate
-// }
-
-// const START_OF_DAY = getStartOfDay(new Date())
-// const DAY_IN_MS = 24 * 60 * 60 * 1000
-
-// const days = new Array(30).fill(undefined).map((_, index) => {
-//   return new Date(+START_OF_DAY + (index * DAY_IN_MS))
-// })
-
-// const calEl = yo`
-//   <div style='z-index: 2; position: fixed; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.2)'>
-//     ${days.map(day => (
-//       yo`<div class='day'>${day}</div>`
-//     ))}
-//   </div>
-// `
-
-// const calInfo = (moonPhase) => (yo`
-//   <div style='position: fixed; top: 10px; right: 10px; mix-blend-mode: overlay;'>
-//     ${moonPhase}
-//   </div>
-// `)
-
-// const calInfoEl = calInfo(moonIllumination.phase)
-
-const getRadians = (phase) => ((phase * 360) + 90) * (Math.PI / 180)
-
-const setLightPositionFromPhase = (phase) => {
-  lightDir.position.x = 10 * cos(getRadians(phase))
-  lightDir.position.z = 10 * sin(getRadians(phase))
-
-  // yo.update(calInfoEl, calInfo(getMoonPhase(phase)))
+const getIsNight = (date) => {
+  const hours = date.getHours()
+  return !(hours >= 8 && hours <= 20)
 }
 
-const getNewCameraPosition = (x, y) => {
+const getRadians = (phase) => ((phase * 360) + 90) * (PI / 180)
+
+const getLightPositionFromPhase = (phase) => {
   return {
-    y: cos(getRadians((y / (height * 2)) * 0.01)) * 5,
-    z: sin(getRadians((x / (width * 2)) * 0.01)) * 5,
-    x: cos(getRadians((x / (width * 2)) * 0.01)) * 5
+    x: 10 * cos(getRadians(phase)),
+    y: 10 * sin(getRadians(phase))
   }
 }
 
-document.addEventListener('mousemove', (event) => {
-  camera.position.y = cos(getRadians((event.clientY / (height * 2)) * 0.01)) * 5
-  camera.position.z = sin(getRadians((event.clientX / (width * 2)) * 0.01)) * 5
-  camera.position.x = cos(getRadians((event.clientX / (width * 2)) * 0.01)) * 5
-})
-
-const onMouseMove = (event) => {
-  const x = event.clientX / width
-  setLightPositionFromPhase(x)
-  // moon.rotation.y = sin(getRadians(x * 0.1)) * -1.5
+const getCameraFromMousePosition = (mouseX, mouseY, width, height) => {
+  return {
+    x: cos(getRadians((mouseX / (width * 2)) * 0.01)) * 5,
+    y: cos(getRadians((mouseY / (height * 2)) * 0.01)) * 5,
+    z: sin(getRadians((mouseX / (width * 2)) * 0.01)) * 5
+  }
 }
 
-// container.appendChild(illumination.el)
+export const init = () => {
+  // State
+  let isDirty = true
+  let isNight = getIsNight(new Date())
 
-console.log(Illumination)
-// console.log(illuminati)
-Illumination.emitter.on('init', (msg) => console.log('yay', msg))
-// illuminati.emitter.on('update', (msg) => console.log('yay', msg))
-// illumination.on('update', (state) => console.log(state))
+  // Init Stage
+  const stage = getStage({
+    cameraConfig: config.camera
+  })
 
-// cal.on('down', handleMouseDown)
-// cal.on('up', handleMouseUp)
-// cal.on('move', onMouseMove)
+  // Init Controls
+  const emitter = new EventEmitter()
+  const controls = getControls(emitter)
 
-// container.appendChild(calEl)
-// container.appendChild(calInfoEl)
-// container.appendChild(bgGrain)
+  // Build DOM
+  const rootEl = document.createElement('div')
+  rootEl.appendChild(stage.renderer.domElement)
+  rootEl.appendChild(controls.rootEl)
+  document.body.appendChild(rootEl)
 
-let width = 0
-let height = 0
-let currentWidth = 0
-let currentHeight = 0
+  // Init DOM Events
 
-var day = {
-  lightDirColor: 0x53e3e3e,
-  lightAmbientColor: 0x020202,
-  background: colors.day.sky
-}
+  // -- Lights
+  let lightDir = new THREE.DirectionalLight(config.colors.night.lightDirColor)
+  let lightAmbient = new THREE.AmbientLight(config.colors.night.lightAmbientColor)
 
-var night = {
-  lightDirColor: 0xff1200,
-  lightAmbientColor: 0x010101,
-  background: 0x161616
-}
+  // -- Moon
+  const moon = new Moon()
+  const cloudDome = new CloudDome()
+  // const moonGlow = new Glow({
+  //   camera,
+  //   target: moon,
+  //   size: 1.3
+  // })
 
-var options = Object.assign({}, day, {
-  cameraPositionX: 0,
-  cameraPositionY: 0,
-  cameraPositionZ: 5
-})
+  Promise.all([
+    moon.load(),
+    cloudDome.load()
+  ])
+  .then(() => {
+    stage.camera.lookAt(moon.position)
 
-var isNight = true
-var isNightDirty = true
-var isDebugging = false
-var isGUIDirty = true
+    const { x, y } = getLightPositionFromPhase(controls.state.phase.phase)
 
-var gui = new GUI()
+    lightDir.position.x = x
+    lightDir.position.y = y
 
-// -- scene
-let scene = new THREE.Scene()
+    stage.add(moon)
+    stage.add(cloudDome)
+    stage.add(lightDir)
+    stage.add(lightAmbient)
 
-// -- camera
-let camera = new THREE.PerspectiveCamera()
+    // Custom events
+    emitter.on('update', (state) => {
+      const { x, y } = getLightPositionFromPhase(state.phase.phase)
 
-// -- renderer
-let renderer = new THREE.WebGLRenderer({
-  antialias: true
-})
+      lightDir.position.x = x
+      lightDir.position.y = y
+    })
 
-renderer.gammaInput = true
-renderer.gammaOutput = true
-renderer.autoClear = false
+    // DOM Events
+    window.addEventListener('resize', (event) => {
+      const { innerWidth, innerHeight } = window
+      stage.onResize(innerWidth, innerHeight)
+    })
 
-renderer.setClearColor(options.background)
-renderer.setPixelRatio(window.devicePixelRatio)
+    window.addEventListener('keydown', ({ keyCode }) => {
+      if (keyCode === 78) {
+        isDirty = true
+        isNight = !isNight
+      }
+    })
 
-// -- lights
-let lightDir = new THREE.DirectionalLight(options.lightDirColor)
-// setLightPositionFromPhase(moonIllumination.phase)
+    window.addEventListener('mousemove', ({ clientX, clientY }) => {
+      // TODO: Should set camera in render instead of reacting to mouseinput...
+      // Use a delta or something and tween position
 
-let lightAmbient = new THREE.AmbientLight(options.lightAmbientColor)
-
-// -- composer
-let composer = null
-let renderModel = null
-
-// -- moon
-let moon = new Moon()
-let cloudDome = new CloudDome()
-let cloudDome2 = new CloudDome(4.5)
-let moonGlow = new Glow()
-
-export function bootstrap () {
-  moon.load(() => {
-    cloudDome.load(() => {
-      cloudDome2.load(() => {
-        init()
-        animate()
-      }, 4.2)
+      // const { x, y, z } =
+      // stage.setCameraPosition(getCameraFromMousePosition(clientX, clientY, window.innerWidth, window.innerHeight))
+      // camera.position.x = x
+      // camera.position.y = y
+      // camera.position.z = z
     })
   })
-}
 
-function initGUI () {
-  gui.addColor(options, 'lightDirColor').listen()
-  gui.addColor(options, 'lightAmbientColor').listen()
-  gui.addColor(options, 'background').listen()
-  gui.add(options, 'cameraPositionX', -50, 50)
-  gui.add(options, 'cameraPositionY', -50, 50)
-  gui.add(options, 'cameraPositionZ', -50, 50)
+  function setColors () {
+    if (isDirty) {
+      isDirty = false
+      const from = isNight ? config.colors.night : config.colors.day
+      const to = isNight ? config.colors.day : config.colors.night
 
-  if (!isDebugging) {
-    gui.domElement.style.display = 'none'
-  }
-}
-
-function init () {
-  document.body.appendChild(container)
-
-  container.appendChild(renderer.domElement)
-
-  width = window.innerWidth
-  height = window.innerHeight
-
-  initGUI()
-
-  camera.aspect = (width / height)
-  camera.position.z = options.cameraPositionZ
-  camera.position.y = options.cameraPositionY
-  camera.lookAt(moon.position)
-  camera.updateProjectionMatrix()
-
-  moonGlow.init({
-    camera,
-    target: moon,
-    size: 1.3
-  })
-
-  scene.add(moon)
-  scene.add(moonGlow)
-  scene.add(cloudDome)
-  scene.add(cloudDome2)
-  scene.add(lightDir)
-  scene.add(lightAmbient)
-
-  var renderTargetParams = {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    format: THREE.RGBFormat,
-    stencilBuffer: true
+      tweenColors(from.background, to.background, DURATION, stage.setBackgroundColor).start()
+      tweenColors(from.lightDirColor, to.lightDirColor, DURATION, c => lightDir.color.set(c)).start()
+      tweenColors(from.lightAmbientColor, to.lightAmbientColor, DURATION, c => lightAmbient.color.set(c)).start()
+    }
   }
 
-  // -- events
-  window.addEventListener('resize', onResize)
-  window.addEventListener('keydown', onKeyDown)
-}
+  function render () {
+    moon.rotate()
+    cloudDome.rotate()
 
-function onResize () {
-  const { innerWidth, innerHeight } = window
+    TWEEN.update()
 
-  camera.aspect = innerWidth / innerHeight
-  camera.updateProjectionMatrix()
+    setColors()
 
-  renderer.setSize(innerWidth, innerHeight)
-}
+    stage.update()
 
-function onKeyDown (event) {
-  if (event.keyCode === 78) {
-    isNightDirty = true
-    isNight = !isNight
+    raf(render)
   }
 
-  if (event.keyCode === 68) {
-    isGUIDirty = true
-    isDebugging = !isDebugging
-  }
-}
-
-function animate () {
-  requestAnimationFrame(animate)
   render()
-}
-
-function renderNight () {
-  if (isNightDirty) {
-    Object.assign(options, night)
-
-    // lightDir.color.set(night.lightDirColor)
-    // lightAmbient.color.set(night.lightAmbientColor)
-    // renderer.setClearColor(night.background)
-
-    var bgTween = tweenColors(
-      day.background,
-      night.background,
-      DURATION,
-      renderer.setClearColor
-    )
-    var lightDirTween = tweenColors(
-      day.lightDirColor,
-      night.lightDirColor,
-      DURATION,
-      (color) => lightDir.color.set(color)
-    )
-    var lightAmbientTween = tweenColors(
-      day.lightAmbientColor,
-      night.lightAmbientColor,
-      DURATION,
-      (color) => lightAmbient.color.set(color)
-    )
-
-    bgTween.start()
-    lightDirTween.start()
-    lightAmbientTween.start()
-
-    isNightDirty = false
-  }
-}
-
-function renderDay () {
-  if (isNightDirty) {
-    Object.assign(options, day)
-
-    var bgTween = tweenColors(
-      night.background,
-      day.background,
-      DURATION,
-      renderer.setClearColor
-    )
-    var lightDirTween = tweenColors(
-      night.lightDirColor,
-      day.lightDirColor,
-      DURATION,
-      (color) => lightDir.color.set(color)
-    )
-    var lightAmbientTween = tweenColors(
-      night.lightAmbientColor,
-      day.lightAmbientColor,
-      DURATION,
-      (color) => lightAmbient.color.set(color)
-    )
-
-    bgTween.start()
-    lightDirTween.start()
-    lightAmbientTween.start()
-
-    isNightDirty = false
-  }
-}
-
-function showGUI () {
-  lightDir.color.set(options.lightDirColor)
-  lightAmbient.color.set(options.lightAmbientColor)
-  // lightDir.position.set(options.lightDirX, options.lightDirY, options.lightDirZ)
-  renderer.setClearColor(options.background)
-
-  if (isGUIDirty) {
-    gui.domElement.style.display = 'block'
-    isGUIDirty = false
-  }
-}
-
-function hideGUI () {
-  if (isGUIDirty) {
-    gui.domElement.style.display = 'none'
-    isGUIDirty = false
-  }
-}
-
-function render () {
-  if (currentWidth !== width || currentHeight !== height) {
-    renderer.setSize(width, height, false)
-    currentWidth = width
-    currentHeight = height
-  }
-
-  TWEEN.update()
-
-  isNight ? renderNight() : renderDay()
-  isDebugging ? showGUI() : hideGUI()
-
-  // camera.position.y = options.cameraPositionY
-  // camera.position.z = options.cameraPositionZ
-  // camera.position.x = options.cameraPositionX
-
-  // camera.position.set(new THREE.Vector3(
-  //   options.cameraPositionX,
-  //   options.cameraPositionY,
-  //   options.cameraPositionZ
-  // ))
-
-  camera.lookAt(moon.position)
-
-  // const t = now() * 0.0005
-  // lightDir.position.x = cos(t) * 10
-  // lightDir.position.z = sin(t) * 10
-
-  // console.log(lightDir.position)
-
-  moon.render()
-  moon.rotate()
-  // moonGlow.pulse()
-
-  cloudDome.rotate()
-  cloudDome2.rotate()
-
-  renderer.clear()
-  renderer.render(scene, camera)
 }

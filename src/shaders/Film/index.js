@@ -20,17 +20,17 @@
  * http://creativecommons.org/licenses/by/3.0/
  */
 
-import vertexShader from './shader.vert.glsl';
-import fragmentShader from './shader.frag.glsl';
+import vertexShader from './shader.vert.glsl'
+import fragmentShader from './shader.frag.glsl'
 
 export default {
   uniforms: {
-    "tDiffuse":   { type: "t", value: null },
-    "time":       { type: "f", value: 0.0 },
-    "nIntensity": { type: "f", value: 0.5 },
-    "sIntensity": { type: "f", value: 0.05 },
-    "sCount":     { type: "f", value: 4096 },
-    "grayscale":  { type: "i", value: 1 }
+    'tDiffuse': { type: 't', value: null },
+    'time': { type: 'f', value: 0.0 },
+    'nIntensity': { type: 'f', value: 0.5 },
+    'sIntensity': { type: 'f', value: 0.05 },
+    'sCount': { type: 'f', value: 4096 },
+    'grayscale': { type: 'i', value: 1 }
   },
   vertexShader: vertexShader,
   fragmentShader: fragmentShader

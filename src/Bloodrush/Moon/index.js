@@ -1,82 +1,57 @@
-import THREE from 'three';
-import { GUI } from 'dat-gui';
+import * as THREE from 'three'
 
-import loader from '../../plugins/loader'
-
-import { default as vertexShader } from './shader.vert.glsl';
-import { default as fragmentShader } from './shader.frag.glsl';
-
-const { cos, sin } = Math;
-const { now } = Date;
+import { load } from '../../plugins/textureLoader'
 
 // -- textures
-import textureMoon from './textures/moon.jpg';
-import textureNormal from './textures/normal.jpg';
+import textureMoon from './textures/moon.jpg'
+import textureNormal from './textures/normal.jpg'
 
 const images = [
   { url: textureMoon, name: 'moon' },
   { url: textureNormal, name: 'normal' }
-];
+]
 
-var gui = new GUI();
-
-var blendings = [
+const blendings = [
   THREE.NoBlending,
   THREE.NormalBlending,
   THREE.AdditiveBlending,
   THREE.SubtractiveBlending,
   THREE.MultiplyBlending,
   THREE.AdditiveAlphaBlending
-];
+]
 
-var options = {
-  // color: 0xa2a2a2,
+const config = {
   color: 0x282828,
   specular: 0x000000,
   shininess: 0,
   blending: blendings[2],
-  normalScale: new THREE.Vector2( 0.4, 0.4 )
-};
+  normalScale: new THREE.Vector2(0.4, 0.4)
+}
 
 export default class Moon extends THREE.Object3D {
-  load (onLoaded) {
-    loader(images, (textures) => {
+  load (onLoaded, addGui) {
+    return load(images).then((textures) => {
       const material = new THREE.MeshPhongMaterial({
-        color: options.color,
-        specular: options.specular,
-        shininess: options.shininess,
+        color: config.color,
+        specular: config.specular,
+        shininess: config.shininess,
         map: textures.moon,
         normalMap: textures.normal,
-        normalScale: options.normalScale,
-        blending: options.blending,
+        normalScale: config.normalScale,
+        blending: config.blending,
         transparent: true
-      });
+      })
 
-      const geometry = new THREE.SphereGeometry(1.5, 50, 50);
+      const geometry = new THREE.SphereGeometry(1.5, 50, 50)
 
-      gui.addColor(options, 'color');
-      gui.addColor(options, 'specular');
-      gui.add(options, 'shininess', 0, 100);
-      gui.add(options, 'blending', 0, blendings.length);
+      this.mesh = new THREE.Mesh(geometry, material)
+      this.add(this.mesh)
 
-      gui.remember(options);
-      gui.domElement.style.display = 'none';
-
-      this.mesh = new THREE.Mesh(geometry, material);
-      this.add(this.mesh);
-
-      onLoaded();
+      return this
     })
   }
 
   rotate () {
-    this.rotation.y -= 0.0003;
-  }
-
-  render () {
-    const { material } = this.mesh;
-
-    material.color.set(options.color);
-    material.specular.set(options.color);
+    this.rotation.y -= 0.0003
   }
 }

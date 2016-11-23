@@ -1,10 +1,10 @@
 var ClearMaskPass = function () {
-  this.enabled = true;
-};
+  this.enabled = true
+}
 
-ClearMaskPass.prototype.render = function ( renderer, writeBuffer, readBuffer, delta ) {
-  var context = renderer.context;
-  context.disable( context.STENCIL_TEST );
-};
+ClearMaskPass.prototype.render = function (renderer, writeBuffer, readBuffer, delta) {
+  var context = renderer.context
+  context.disable(context.STENCIL_TEST)
+}
 
-export default ClearMaskPass;
+export default ClearMaskPass

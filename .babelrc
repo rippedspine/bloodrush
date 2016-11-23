@@ -1,9 +1,6 @@
 {
-  "ignore": [
-    "node_modules"
-  ],
-  "optional": [
-    "es7.classProperties",
-    "es7.objectRestSpread"
+  "ignore": ["node_modules"],
+  "presets": [
+    ["es2015", { "modules": false }]
   ]
 }
