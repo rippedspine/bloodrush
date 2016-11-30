@@ -14,7 +14,7 @@ const config = {
   },
 
   camera: {
-    position: { x: 5, y: 0, z: 0 }
+    position: { x: 0, y: 0, z: 5 }
   }
 }
 

@@ -4,6 +4,15 @@ import kebabCase from 'kebab-case'
 
 const assign = Object.assign
 
+const WANING_GIBBOUS = 'Waning Gibbous'
+const LAST_QUARTER = 'Last Quarter'
+const WANING_CRESCENT = 'Waning Crescent'
+const NEW_MOON = 'New Moon'
+const WAXING_CRESCENT = 'Waxing Crescent'
+const FIRST_QUARTER = 'First Quarter'
+const WAXING_GIBBOUS = 'Waxing Gibbous'
+const FULL_MOON = 'Full Moon'
+
 function getPhase (date) {
   return SunCalc.getMoonIllumination(date)
 }
@@ -12,25 +21,25 @@ const START_OF_TODAY = getStartOfDay(new Date())
 const DAY_IN_MS = 24 * 60 * 60 * 1000
 const MOON_PHASE_TODAY = getPhase(START_OF_TODAY)
 
-const DATES = new Array(30).fill(undefined).map((_, index) => {
+const DATES = new Array(31).fill(undefined).map((_, index) => {
   const date = new Date(+START_OF_TODAY + (index * DAY_IN_MS))
+  const dayNumber = date.getDate()
+
   return {
-    date,
-    dayNumber: date.getDate(),
-    monthNumber: date.getMonth(),
+    dayNumber: dayNumber < 10 ? `0${dayNumber}` : dayNumber,
     phase: getPhase(date)
   }
 })
 
 function getHumanReadableMoonPhase (phase) {
-  if (phase >= 0.1 && phase < 0.2) return 'Waning Gibbous'
-  if (phase >= 0.2 && phase < 0.3) return 'Last Quarter'
-  if (phase >= 0.3 && phase < 0.45) return 'Waning Crescent'
-  if (phase >= 0.45 && phase < 0.55) return 'New Moon'
-  if (phase >= 0.55 && phase < 0.7) return 'Waxing Crescent'
-  if (phase >= 0.7 && phase < 0.8) return 'First Quarter'
-  if (phase >= 0.8 && phase < 0.9) return 'Waxing Gibbous'
-  return 'Full Moon'
+  if (phase >= 0.1 && phase < 0.2) return WANING_GIBBOUS
+  if (phase >= 0.2 && phase < 0.3) return LAST_QUARTER
+  if (phase >= 0.3 && phase < 0.45) return WANING_CRESCENT
+  if (phase >= 0.45 && phase < 0.55) return NEW_MOON
+  if (phase >= 0.55 && phase < 0.7) return WAXING_CRESCENT
+  if (phase >= 0.7 && phase < 0.8) return FIRST_QUARTER
+  if (phase >= 0.8 && phase < 0.9) return WAXING_GIBBOUS
+  return FULL_MOON
 }
 
 function getStartOfDay (date) {
@@ -43,7 +52,8 @@ function getStartOfDay (date) {
 
 const getStyle = (styles) => {
   return Object.keys(styles).map((property) => {
-    return `${kebabCase(property)}:${styles[property]}`
+    const value = styles[property]
+    return `${kebabCase(property)}:${isNaN(value) ? value : value + 'px'}`
   }).join(';')
 }
 
@@ -54,27 +64,84 @@ function daysEl (state, actions) {
       position: 'fixed',
       bottom: 0,
       width: '100%',
-      height: '40px',
+      padding: '0 1rem',
       display: 'flex',
       justifyContent: 'space-between',
-      mixBlendMode: 'overlay'
+      textAlign: 'center'
     })}>
-      ${DATES.map(date => (
-        yo`<div onclick=${() => actions.setPhase(date.phase)} style=${getStyle({ cursor: 'pointer' })}>
+      ${DATES.map((date, index) => (
+        yo`<div
+          onclick=${() => actions.setPhase(date.phase)}
+          style=${getStyle({
+            cursor: 'pointer',
+            padding: '1rem 0.5rem',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            flexDirection: 'column'
+          })}
+        > 
+          ${index % 5 === 0 ? (yo`<div style="padding:2px">${svgPhase(date.phase.phase)}</div>`) : ''}
           <div>${date.dayNumber}</div>
-          <div>${date.monthNumber}</div>
         </div>`
       ))}
     </div>
   `
 }
 
-function infoEl (state, actions) {
-  const info = getHumanReadableMoonPhase(state.phase.phase)
+const getCircleFill = (humanPhase) => {
+  return [FULL_MOON, LAST_QUARTER, FIRST_QUARTER, WANING_GIBBOUS, WAXING_GIBBOUS].indexOf(humanPhase) >= 0 ? 'white' : 'black'
+}
+
+const getCrescentFill = (humanPhase) => {
+  return [WAXING_CRESCENT, WANING_CRESCENT].indexOf(humanPhase) >= 0 ? 'white' : 'black'
+}
+
+const getRotation = (humanPhase) => {
+  return [LAST_QUARTER, WANING_CRESCENT, WAXING_GIBBOUS].indexOf(humanPhase) >= 0 ? '180deg' : '0'
+}
+
+function svgPhase (phase) {
+  const humanPhase = getHumanReadableMoonPhase(phase)
+
+  const circle = yo`<circle fill="${getCircleFill(humanPhase)}" cx="29" cy="29" r="29"></circle>`
+
+  const quarter = yo`
+    <path fill="black" d="M29,7.10542736e-15 C12.9837423,7.10542736e-15 0,12.9837423 0,29 C0,45.0162577 12.9837423,58 29,58 L29,2.57571742e-14 Z"></path>
+  `
+  const crescent = yo`
+    <path d="M21.9726229,0.857273392 C24.2226751,0.297248176 26.5766245,1.53810965e-15 29,1.53810965e-15 C45.0162577,1.53810965e-15 58,12.9837423 58,29 C58,45.0162577 45.0162577,58 29,58 C27.2300118,58 25.4970594,57.8414309 23.8145737,57.5377236 C34.677942,53.704946 42.5333333,42.5934095 42.5333333,29.4833333 C42.5333333,15.6432123 33.7787159,4.03040873 21.9726229,0.857273392 Z" fill="${getCrescentFill(humanPhase)}"></path>
+  `
 
   return yo`
-    <div style='position: fixed; top: 10px; right: 10px; mix-blend-mode: overlay;'>
-      ${info}
+    <svg viewBox="0 0 58 58" style="transform: rotate(${getRotation(humanPhase)})">
+      ${circle}
+      ${[FIRST_QUARTER, LAST_QUARTER].indexOf(humanPhase) >= 0 && quarter}
+      ${[WANING_GIBBOUS, WANING_CRESCENT, WAXING_CRESCENT, WAXING_GIBBOUS].indexOf(humanPhase) >= 0 && crescent}
+    </svg>
+  `
+}
+
+function infoEl (state, actions) {
+  const { phase } = state
+  const info = getHumanReadableMoonPhase(phase.phase)
+
+  return yo`
+    <div style=${getStyle({
+      position: 'fixed',
+      top: 0,
+      right: 0,
+      padding: '1rem',
+      lineHeight: 25
+    })}>
+      <div style="${getStyle({ width: 18 })}">
+        ${svgPhase(phase.phase)}
+      </div>
+      <div>
+        ${info}
+      </div>
+      <div>
+        ${((1 - phase.fraction) * 100).toFixed(2)}% illuminated
+      </div>
     </div>
   `
 }
@@ -85,9 +152,21 @@ function _update (el, newEl) {
 
 function _render (state, actions) {
   return yo`
-    <div>
+    <div style=${getStyle({
+      mixBlendMode: 'overlay'
+    })}>
       ${infoEl(state, actions)}
       ${daysEl(state, actions)}
+      <div
+        style=${getStyle({
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          width: 200,
+          height: 200
+        })}
+      >
+      </div>
     </div>
   `
 }

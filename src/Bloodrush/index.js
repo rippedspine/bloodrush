@@ -30,7 +30,7 @@ const getRadians = (phase) => ((phase * 360) + 90) * (PI / 180)
 const getLightPositionFromPhase = (phase) => {
   return {
     x: 10 * cos(getRadians(phase)),
-    y: 10 * sin(getRadians(phase))
+    z: 10 * sin(getRadians(phase))
   }
 }
 
@@ -66,7 +66,7 @@ export const init = () => {
 
   // -- Lights
   let lightDir = new THREE.DirectionalLight(config.colors.night.lightDirColor)
-  let lightAmbient = new THREE.AmbientLight(config.colors.night.lightAmbientColor)
+  let lightAmbient = new THREE.AmbientLight(config.colors.night.lightAmbientColor, 0.8)
 
   // -- Moon
   const moon = new Moon()
@@ -84,10 +84,10 @@ export const init = () => {
   .then(() => {
     stage.camera.lookAt(moon.position)
 
-    const { x, y } = getLightPositionFromPhase(controls.state.phase.phase)
+    const { x, z } = getLightPositionFromPhase(controls.state.phase.phase)
 
     lightDir.position.x = x
-    lightDir.position.y = y
+    lightDir.position.z = z
 
     stage.add(moon)
     stage.add(cloudDome)
@@ -96,10 +96,10 @@ export const init = () => {
 
     // Custom events
     emitter.on('update', (state) => {
-      const { x, y } = getLightPositionFromPhase(state.phase.phase)
+      const { x, z } = getLightPositionFromPhase(state.phase.phase)
 
       lightDir.position.x = x
-      lightDir.position.y = y
+      lightDir.position.z = z
     })
 
     // DOM Events
