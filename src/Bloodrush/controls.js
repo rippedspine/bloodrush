@@ -13,21 +13,22 @@ const FIRST_QUARTER = 'First Quarter'
 const WAXING_GIBBOUS = 'Waxing Gibbous'
 const FULL_MOON = 'Full Moon'
 
-function getPhase (date) {
+function getMoonIllumination (date) {
   return SunCalc.getMoonIllumination(date)
 }
 
 const START_OF_TODAY = getStartOfDay(new Date())
 const DAY_IN_MS = 24 * 60 * 60 * 1000
-const MOON_PHASE_TODAY = getPhase(START_OF_TODAY)
+const MOON_PHASE_TODAY = getMoonIllumination(START_OF_TODAY)
 
-const DATES = new Array(31).fill(undefined).map((_, index) => {
-  const date = new Date(+START_OF_TODAY + (index * DAY_IN_MS))
-  const dayNumber = date.getDate()
+const DATES = new Array(31).fill().map((_, index) => {
+  const timestamp = new Date((+START_OF_TODAY - (16 * DAY_IN_MS)) + (index * DAY_IN_MS))
+  const dayNumber = timestamp.getDate()
 
   return {
+    timestamp: +timestamp,
     dayNumber: dayNumber < 10 ? `0${dayNumber}` : dayNumber,
-    phase: getPhase(date)
+    moon: getMoonIllumination(timestamp)
   }
 })
 
@@ -71,16 +72,17 @@ function daysEl (state, actions) {
     })}>
       ${DATES.map((date, index) => (
         yo`<div
-          onclick=${() => actions.setPhase(date.phase)}
+          onclick=${() => actions.setMoonIllumination(date.moon, date.timestamp)}
           style=${getStyle({
             cursor: 'pointer',
             padding: '1rem 0.5rem',
             display: 'flex',
             justifyContent: 'flex-end',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            background: state.timestamp === date.timestamp ? 'red' : 'initial'
           })}
         > 
-          ${index % 5 === 0 ? (yo`<div style="padding:2px">${svgPhase(date.phase.phase)}</div>`) : ''}
+          ${index % 5 === 0 ? (yo`<div style="padding:2px">${svgPhase(date.moon.phase)}</div>`) : ''}
           <div>${date.dayNumber}</div>
         </div>`
       ))}
@@ -122,8 +124,8 @@ function svgPhase (phase) {
 }
 
 function infoEl (state, actions) {
-  const { phase } = state
-  const info = getHumanReadableMoonPhase(phase.phase)
+  const { moon } = state
+  const info = getHumanReadableMoonPhase(moon.phase)
 
   return yo`
     <div style=${getStyle({
@@ -134,13 +136,13 @@ function infoEl (state, actions) {
       lineHeight: 25
     })}>
       <div style="${getStyle({ width: 18 })}">
-        ${svgPhase(phase.phase)}
+        ${svgPhase(moon.phase)}
       </div>
       <div>
         ${info}
       </div>
       <div>
-        ${((1 - phase.fraction) * 100).toFixed(2)}% illuminated
+        ${((1 - moon.fraction) * 100).toFixed(2)}% illuminated
       </div>
     </div>
   `
@@ -173,20 +175,22 @@ function _render (state, actions) {
 
 export default function getControls (emitter) {
   let _state = {
-    phase: MOON_PHASE_TODAY
+    timestamp: +START_OF_TODAY,
+    moon: MOON_PHASE_TODAY
   }
 
   emitter.emit('init')
 
-  const update = (state) => {
+  const update = (prevState, state) => {
     _update(rootEl, _render(state, actions))
-    emitter.emit('update', state)
+    emitter.emit('update', { prevState, state })
   }
 
   const actions = {
-    setPhase (phase) {
-      _state = assign({}, _state, { phase })
-      update(_state)
+    setMoonIllumination (moon, timestamp) {
+      var prevState = assign({}, _state)
+      _state = assign({}, _state, { moon, timestamp })
+      update(prevState, _state)
     }
   }
 

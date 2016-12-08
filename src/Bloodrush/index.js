@@ -18,14 +18,22 @@ import config from './config'
 
 // Constants
 const DURATION = 1000
-const { sin, cos, PI } = Math
+const { sin, cos, PI, sqrt, pow, acos, min, max } = Math
 
 const getIsNight = (date) => {
   const hours = date.getHours()
   return !(hours >= 8 && hours <= 20)
 }
 
+const clamp = (val, x, y) => min(max(val, x), y)
 const getRadians = (phase) => ((phase * 360) + 90) * (PI / 180)
+
+const getDistance = ([ x1, x2, z1, z2 ]) => {
+  const r = sqrt(pow(x1, 2), pow(z1, 2))
+  const d = sqrt(pow((x1 - x2), 2) + pow((z1 - z2), 2))
+
+  return r * acos(clamp(1 - (pow(d, 2) / (2 * (r * r))), -1, 1))
+}
 
 const getLightPositionFromPhase = (phase) => {
   return {
@@ -44,7 +52,7 @@ const getCameraFromMousePosition = (mouseX, mouseY, width, height) => {
 
 export const init = () => {
   // State
-  let isDirty = true
+  let isColorsDirty = true
   let isNight = getIsNight(new Date())
 
   // Init Stage
@@ -84,7 +92,7 @@ export const init = () => {
   .then(() => {
     stage.camera.lookAt(moon.position)
 
-    const { x, z } = getLightPositionFromPhase(controls.state.phase.phase)
+    const { x, z } = getLightPositionFromPhase(controls.state.moon.phase)
 
     lightDir.position.x = x
     lightDir.position.z = z
@@ -95,11 +103,21 @@ export const init = () => {
     stage.add(lightAmbient)
 
     // Custom events
-    emitter.on('update', (state) => {
-      const { x, z } = getLightPositionFromPhase(state.phase.phase)
+    emitter.on('update', ({ state, prevState }) => {
+      const { x, z } = getLightPositionFromPhase(state.moon.phase)
 
-      lightDir.position.x = x
-      lightDir.position.z = z
+      const x1 = lightDir.position.x
+      const z1 = lightDir.position.z
+
+      const duration = (Math.abs(state.timestamp - prevState.timestamp)) * 0.000001
+
+      new TWEEN.Tween({ x: x1, z: z1 }).to({ x, z }, duration)
+        .easing(TWEEN.Easing.Back.Out)
+        .onUpdate(function () {
+          lightDir.position.x = this.x
+          lightDir.position.z = this.z
+        })
+        .start()
     })
 
     // DOM Events
@@ -110,7 +128,7 @@ export const init = () => {
 
     window.addEventListener('keydown', ({ keyCode }) => {
       if (keyCode === 78) {
-        isDirty = true
+        isColorsDirty = true
         isNight = !isNight
       }
     })
@@ -128,8 +146,8 @@ export const init = () => {
   })
 
   function setColors () {
-    if (isDirty) {
-      isDirty = false
+    if (isColorsDirty) {
+      isColorsDirty = false
       const from = isNight ? config.colors.night : config.colors.day
       const to = isNight ? config.colors.day : config.colors.night
 
