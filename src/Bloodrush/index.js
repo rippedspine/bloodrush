@@ -18,21 +18,41 @@ import config from './config'
 
 // Constants
 const DURATION = 1000
-const { sin, cos, PI, sqrt, pow, acos, min, max } = Math
+const {
+  sin,
+  cos,
+  PI
+} = Math
 
 const getIsNight = (date) => {
   const hours = date.getHours()
   return !(hours >= 8 && hours <= 20)
 }
 
-const clamp = (val, x, y) => min(max(val, x), y)
+// const clamp = (val, x, y) => min(max(val, x), y)
 const getRadians = (phase) => ((phase * 360) + 90) * (PI / 180)
 
-const getDistance = ([ x1, x2, z1, z2 ]) => {
-  const r = sqrt(pow(x1, 2), pow(z1, 2))
-  const d = sqrt(pow((x1 - x2), 2) + pow((z1 - z2), 2))
+function lerp (position, targetPosition) {
+  return {
+    x: position.x + (targetPosition.x - position.x) * 0.2,
+    y: position.y + (targetPosition.y - position.y) * 0.2,
+    z: position.z + (targetPosition.z - position.z) * 0.2
+  }
+}
 
-  return r * acos(clamp(1 - (pow(d, 2) / (2 * (r * r))), -1, 1))
+// const getDistance = ([ x1, x2, z1, z2 ]) => {
+//   const r = sqrt(pow(x1, 2), pow(z1, 2))
+//   const d = sqrt(pow((x1 - x2), 2) + pow((z1 - z2), 2))
+
+//   return r * acos(clamp(1 - (pow(d, 2) / (2 * (r * r))), -1, 1))
+// }
+
+const getCameraFromMousePosition = (mouseX, mouseY, width, height) => {
+  return {
+    x: cos(getRadians((mouseX / (width * 2)) * 0.002)) * 5,
+    y: cos(getRadians((mouseY / (height * 2)) * 0.002)) * 5,
+    z: sin(getRadians((mouseY / (height * 2)) * 0.002)) * -5
+  }
 }
 
 const getLightPositionFromPhase = (phase) => {
@@ -42,18 +62,11 @@ const getLightPositionFromPhase = (phase) => {
   }
 }
 
-const getCameraFromMousePosition = (mouseX, mouseY, width, height) => {
-  return {
-    x: cos(getRadians((mouseX / (width * 2)) * 0.01)) * 5,
-    y: cos(getRadians((mouseY / (height * 2)) * 0.01)) * 5,
-    z: sin(getRadians((mouseX / (width * 2)) * 0.01)) * 5
-  }
-}
-
 export const init = () => {
   // State
   let isColorsDirty = true
   let isNight = getIsNight(new Date())
+  let cameraPosition = config.camera.position
 
   // Init Stage
   const stage = getStage({
@@ -134,14 +147,7 @@ export const init = () => {
     })
 
     window.addEventListener('mousemove', ({ clientX, clientY }) => {
-      // TODO: Should set camera in render instead of reacting to mouseinput...
-      // Use a delta or something and tween position
-
-      // const { x, y, z } =
-      // stage.setCameraPosition(getCameraFromMousePosition(clientX, clientY, window.innerWidth, window.innerHeight))
-      // camera.position.x = x
-      // camera.position.y = y
-      // camera.position.z = z
+      cameraPosition = getCameraFromMousePosition(clientX, clientY, window.innerWidth, window.innerHeight)
     })
   })
 
@@ -164,6 +170,12 @@ export const init = () => {
     TWEEN.update()
 
     setColors()
+
+    const { x, y, z } = lerp(stage.camera.position, cameraPosition)
+
+    stage.camera.position.x = x
+    stage.camera.position.y = y
+    stage.camera.position.z = z
 
     stage.update()
 

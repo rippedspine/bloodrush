@@ -33,14 +33,14 @@ const DATES = new Array(31).fill().map((_, index) => {
 })
 
 function getHumanReadableMoonPhase (phase) {
-  if (phase >= 0.1 && phase < 0.2) return WANING_GIBBOUS
-  if (phase >= 0.2 && phase < 0.3) return LAST_QUARTER
-  if (phase >= 0.3 && phase < 0.45) return WANING_CRESCENT
-  if (phase >= 0.45 && phase < 0.55) return NEW_MOON
-  if (phase >= 0.55 && phase < 0.7) return WAXING_CRESCENT
-  if (phase >= 0.7 && phase < 0.8) return FIRST_QUARTER
-  if (phase >= 0.8 && phase < 0.9) return WAXING_GIBBOUS
-  return FULL_MOON
+  if (phase >= 0.1 && phase < 0.2) return WAXING_CRESCENT
+  if (phase >= 0.2 && phase < 0.3) return FIRST_QUARTER
+  if (phase >= 0.3 && phase < 0.45) return WAXING_GIBBOUS
+  if (phase >= 0.45 && phase < 0.55) return FULL_MOON
+  if (phase >= 0.55 && phase < 0.7) return WANING_GIBBOUS
+  if (phase >= 0.7 && phase < 0.8) return LAST_QUARTER
+  if (phase >= 0.8 && phase < 0.9) return WANING_CRESCENT
+  return NEW_MOON
 }
 
 function getStartOfDay (date) {
@@ -79,7 +79,7 @@ function daysEl (state, actions) {
             display: 'flex',
             justifyContent: 'flex-end',
             flexDirection: 'column',
-            background: state.timestamp === date.timestamp ? 'red' : 'initial'
+            background: state.timestamp === date.timestamp ? 'rgba(255,255,255,0.2)' : 'initial'
           })}
         > 
           ${index % 5 === 0 ? (yo`<div style="padding:2px">${svgPhase(date.moon.phase)}</div>`) : ''}
@@ -142,7 +142,7 @@ function infoEl (state, actions) {
         ${info}
       </div>
       <div>
-        ${((1 - moon.fraction) * 100).toFixed(2)}% illuminated
+        ${(moon.fraction * 100).toFixed(2)}% illuminated
       </div>
     </div>
   `

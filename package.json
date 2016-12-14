@@ -19,6 +19,7 @@
     "file-loader": "^0.9.0",
     "kebab-case": "^1.0.0",
     "lodash": "^4.17.2",
+    "lodash.debounce": "^4.0.8",
     "node-libs-browser": "^1.0.0",
     "postcss-loader": "^1.1.1",
     "precss": "^1.4.0",
