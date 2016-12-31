@@ -12,7 +12,7 @@ import { tweenColors } from '../plugins/color'
 // Internal
 import Moon from './Moon'
 import CloudDome from './CloudDome'
-// import Glow from './Glow'
+import Glow from './Glow'
 
 import config from './config'
 
@@ -26,17 +26,20 @@ const {
 
 const getIsNight = (date) => {
   const hours = date.getHours()
+  console.log(hours >= 8 && hours <= 20)
   return !(hours >= 8 && hours <= 20)
 }
 
 // const clamp = (val, x, y) => min(max(val, x), y)
 const getRadians = (phase) => ((phase * 360) + 90) * (PI / 180)
 
-function lerp (position, targetPosition) {
+const lerp = (start, target, value) => (start + (target - start) * value)
+
+function lerpPosition (position, targetPosition, value = 0.2) {
   return {
-    x: position.x + (targetPosition.x - position.x) * 0.2,
-    y: position.y + (targetPosition.y - position.y) * 0.2,
-    z: position.z + (targetPosition.z - position.z) * 0.2
+    x: lerp(position.x, targetPosition.x, value),
+    y: lerp(position.y, targetPosition.y, value),
+    z: lerp(position.z, targetPosition.z, value)
   }
 }
 
@@ -64,9 +67,10 @@ const getLightPositionFromPhase = (phase) => {
 
 export const init = () => {
   // State
-  let isColorsDirty = true
+  let isColorsDirty = false
   let isNight = getIsNight(new Date())
   let cameraPosition = config.camera.position
+  let deltaY = 0
 
   // Init Stage
   const stage = getStage({
@@ -92,11 +96,6 @@ export const init = () => {
   // -- Moon
   const moon = new Moon()
   const cloudDome = new CloudDome()
-  // const moonGlow = new Glow({
-  //   camera,
-  //   target: moon,
-  //   size: 1.3
-  // })
 
   Promise.all([
     moon.load(),
@@ -110,7 +109,14 @@ export const init = () => {
     lightDir.position.x = x
     lightDir.position.z = z
 
+    const moonGlow = new Glow({
+      camera: stage.camera,
+      target: moon,
+      size: 1.3
+    })
+
     stage.add(moon)
+    stage.add(moonGlow)
     stage.add(cloudDome)
     stage.add(lightDir)
     stage.add(lightAmbient)
@@ -134,6 +140,10 @@ export const init = () => {
     })
 
     // DOM Events
+    window.addEventListener('wheel', (event) => {
+      deltaY -= (event.deltaY * 0.01)
+    })
+
     window.addEventListener('resize', (event) => {
       const { innerWidth, innerHeight } = window
       stage.onResize(innerWidth, innerHeight)
@@ -171,11 +181,13 @@ export const init = () => {
 
     setColors()
 
-    const { x, y, z } = lerp(stage.camera.position, cameraPosition)
+    const { x, y, z } = lerpPosition(stage.camera.position, cameraPosition)
+
+    // console.log(deltaY)
 
     stage.camera.position.x = x
     stage.camera.position.y = y
-    stage.camera.position.z = z
+    stage.camera.position.z = lerp(z, z + deltaY, 0.2)
 
     stage.update()
 

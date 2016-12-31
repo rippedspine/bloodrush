@@ -9,16 +9,16 @@ export default class Glow extends THREE.Object3D {
   constructor ({
     camera,
     target,
-    size = 1.5,
+    size = 1.1,
     pushBack = true
   }) {
     super()
 
-    this.size = size
+    // this.size = size
 
     const uniforms = {
       'c': { type: 'f', value: 0.7 },
-      'p': { type: 'f', value: 1.5 },
+      'p': { type: 'f', value: 1.0 },
       glowColor: { type: 'c', value: new THREE.Color(0x443322) },
       viewVector: { type: 'v3', value: camera.position }
     }
@@ -30,10 +30,8 @@ export default class Glow extends THREE.Object3D {
       side: THREE.FrontSide,
       blending: THREE.AdditiveBlending,
       transparent: true,
-      opacity: 0.3
+      opacity: 0.4
     })
-
-    console.log(target)
 
     const geometry = target.mesh.geometry.clone()
 
@@ -48,14 +46,14 @@ export default class Glow extends THREE.Object3D {
     this.origin = {
       x: 0,
       y: 0,
-      z: -6
+      z: 0
     }
 
     if (pushBack) {
-      this.position.z = -6
+      this.position.z = 0
     }
 
-    this.scale.multiplyScalar(2.8)
+    this.scale.multiplyScalar(1.5)
 
     this.add(this.mesh)
     this.tick = 0
