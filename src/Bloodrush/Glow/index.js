@@ -6,19 +6,15 @@ import shaderFrag from './shader.frag.glsl'
 const { sin } = Math
 
 export default class Glow extends THREE.Object3D {
-  constructor ({
+  init ({
     camera,
     target,
-    size = 1.1,
+    size = 2.0,
     pushBack = true
   }) {
-    super()
-
-    // this.size = size
-
     const uniforms = {
-      'c': { type: 'f', value: 0.7 },
-      'p': { type: 'f', value: 1.0 },
+      'c': { type: 'f', value: 0.5 },
+      'p': { type: 'f', value: 1.5 },
       glowColor: { type: 'c', value: new THREE.Color(0x443322) },
       viewVector: { type: 'v3', value: camera.position }
     }
@@ -29,9 +25,10 @@ export default class Glow extends THREE.Object3D {
       fragmentShader: shaderFrag,
       side: THREE.FrontSide,
       blending: THREE.AdditiveBlending,
-      transparent: true,
-      opacity: 0.4
+      transparent: true
     })
+
+    this._material = material
 
     const geometry = target.mesh.geometry.clone()
 
@@ -49,14 +46,27 @@ export default class Glow extends THREE.Object3D {
       z: 0
     }
 
-    if (pushBack) {
-      this.position.z = 0
-    }
+    // if (pushBack) {
+    //   this.position.z = -0.2
+    // }
 
-    this.scale.multiplyScalar(1.5)
+    this.position.z = 0.0
+
+    this.scale.multiplyScalar(size)
 
     this.add(this.mesh)
     this.tick = 0
+  }
+
+  fade () {
+    // this.tick += 0.02
+
+    if (this._material) {
+      // this._material.uniforms.p.value = sin(this.tick)
+      // this._material.uniforms.p.needsUpdate = true
+    }
+
+    // console.log(this._material)
   }
 
   pulse () {

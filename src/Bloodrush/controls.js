@@ -22,7 +22,7 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000
 const MOON_PHASE_TODAY = getMoonIllumination(START_OF_TODAY)
 
 const DATES = new Array(31).fill().map((_, index) => {
-  const timestamp = new Date((+START_OF_TODAY - (16 * DAY_IN_MS)) + (index * DAY_IN_MS))
+  const timestamp = new Date((+START_OF_TODAY - (15 * DAY_IN_MS)) + (index * DAY_IN_MS))
   const dayNumber = timestamp.getDate()
 
   return {
@@ -52,9 +52,14 @@ function getStartOfDay (date) {
 }
 
 const getStyle = (styles) => {
+  var relativeProps = ['opacity', 'lineHeight']
+
   return Object.keys(styles).map((property) => {
-    const value = styles[property]
-    return `${kebabCase(property)}:${isNaN(value) ? value : value + 'px'}`
+    let value = styles[property]
+    value = (~relativeProps.indexOf(property))
+      ? value
+      : (isNaN(value) ? value : value + 'px')
+    return `${kebabCase(property)}: ${value}`
   }).join(';')
 }
 
@@ -133,7 +138,8 @@ function infoEl (state, actions) {
       top: 0,
       right: 0,
       padding: '1rem',
-      lineHeight: 25
+      lineHeight: 1.3,
+      background: 'rgba(255,255,255,0.3)'
     })}>
       <div style="${getStyle({ width: 18 })}">
         ${svgPhase(moon.phase)}
@@ -154,20 +160,24 @@ function _update (el, newEl) {
 
 function _render (state, actions) {
   return yo`
-    <div style=${getStyle({
-      mixBlendMode: 'overlay'
-    })}>
-      ${infoEl(state, actions)}
-      ${daysEl(state, actions)}
-      <div
-        style=${getStyle({
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          width: 200,
-          height: 200
-        })}
-      >
+    <div>
+      <div style=${getStyle({
+        pointerEvents: 'none',
+        opacity: '0.05'
+      })}>
+        ${daysEl(state, actions)}
+      </div>
+      <div style=${getStyle({
+        pointerEvents: 'none',
+        opacity: '0.06'
+      })}>
+        ${infoEl(state, actions)}
+      </div>
+      <div style=${getStyle({
+        mixBlendMode: 'overlay'
+      })}>
+        ${infoEl(state, actions)}
+        ${daysEl(state, actions)}
       </div>
     </div>
   `

@@ -70,7 +70,7 @@ export const init = () => {
   let isColorsDirty = false
   let isNight = getIsNight(new Date())
   let cameraPosition = config.camera.position
-  let deltaY = 0
+  // let deltaY = 0
 
   // Init Stage
   const stage = getStage({
@@ -96,6 +96,7 @@ export const init = () => {
   // -- Moon
   const moon = new Moon()
   const cloudDome = new CloudDome()
+  const moonGlow = new Glow()
 
   Promise.all([
     moon.load(),
@@ -109,14 +110,15 @@ export const init = () => {
     lightDir.position.x = x
     lightDir.position.z = z
 
-    const moonGlow = new Glow({
+    moonGlow.init({
       camera: stage.camera,
       target: moon,
-      size: 1.3
+      size: 1.7
     })
 
     stage.add(moon)
     stage.add(moonGlow)
+
     stage.add(cloudDome)
     stage.add(lightDir)
     stage.add(lightAmbient)
@@ -140,9 +142,9 @@ export const init = () => {
     })
 
     // DOM Events
-    window.addEventListener('wheel', (event) => {
-      deltaY -= (event.deltaY * 0.01)
-    })
+    // window.addEventListener('wheel', (event) => {
+    //   deltaY -= (event.deltaY * 0.01)
+    // })
 
     window.addEventListener('resize', (event) => {
       const { innerWidth, innerHeight } = window
@@ -175,7 +177,9 @@ export const init = () => {
 
   function render () {
     moon.rotate()
+
     cloudDome.rotate()
+    moonGlow.fade()
 
     TWEEN.update()
 
@@ -187,7 +191,8 @@ export const init = () => {
 
     stage.camera.position.x = x
     stage.camera.position.y = y
-    stage.camera.position.z = lerp(z, z + deltaY, 0.2)
+    stage.camera.position.z = z
+    // stage.camera.position.z = lerp(z, z + deltaY, 0.2)
 
     stage.update()
 

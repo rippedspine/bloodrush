@@ -8,18 +8,20 @@ const sourcePath = path.join(__dirname, './src')
 const staticsPath = path.join(__dirname, './static')
 
 const plugins = [
-  new webpack.optimize.CommonsChunkPlugin({
-    name: 'vendor',
-    minChunks: Infinity,
-    filename: 'vendor.bundle.js'
-  }),
   new webpack.DefinePlugin({
     'process.env': { NODE_ENV: JSON.stringify(nodeEnv) }
   }),
   new webpack.NamedModulesPlugin()
 ]
 
+let entry = {
+  js: './index.js',
+  vendor: ['three']
+}
+
 if (isProd) {
+  delete entry.vendor
+
   plugins.push(
     new webpack.LoaderOptionsPlugin({
       minimize: true,
@@ -45,6 +47,11 @@ if (isProd) {
   )
 } else {
   plugins.push(
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'vendor',
+      minChunks: Infinity,
+      filename: 'vendor.bundle.js'
+    }),
     new webpack.HotModuleReplacementPlugin()
   )
 }
@@ -52,24 +59,13 @@ if (isProd) {
 module.exports = {
   devtool: isProd ? 'source-map' : 'eval',
   context: sourcePath,
-  entry: {
-    js: './index.js',
-    vendor: ['three']
-  },
+  entry: entry,
   output: {
     path: staticsPath,
     filename: '[name].bundle.js'
   },
   module: {
     rules: [
-      // {
-      //   test: /\.html$/,
-      //   exclude: /node_modules/,
-      //   use: 'file-loader',
-      //   query: {
-      //     name: '[name].[ext]'
-      //   }
-      // },
       {
         test: /\.css$/,
         exclude: /node_modules/,

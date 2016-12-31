@@ -6,10 +6,15 @@ import { load } from '../../plugins/textureLoader'
 import textureMoon from './textures/moon.jpg'
 import textureNormal from './textures/normal.jpg'
 
-const images = [
-  { url: textureMoon, name: 'moon' },
-  { url: textureNormal, name: 'normal' }
-]
+const images = (process.env.NODE_ENV === 'production')
+  ? [
+    { url: '/images/moon.jpg', name: 'moon' },
+    { url: '/images/normal.jpg', name: 'normal' }
+  ]
+  : [
+    { url: textureMoon, name: 'moon' },
+    { url: textureNormal, name: 'normal' }
+  ]
 
 const blendings = [
   THREE.NoBlending,

@@ -4,9 +4,20 @@ import { load } from '../../plugins/textureLoader'
 
 import textureCloud from './textures/cloud.png'
 
+const textureCloudUrl = (process.env.NODE_ENV === 'production')
+  ? '/images/cloud.png'
+  : textureCloud
+
 const images = [
-  { url: textureCloud, name: 'cloud' }
+  { url: textureCloudUrl, name: 'cloud' }
 ]
+
+  // THREE.NoBlending,
+  // THREE.NormalBlending,
+  // THREE.AdditiveBlending,
+  // THREE.SubtractiveBlending,
+  // THREE.MultiplyBlending,
+  // THREE.AdditiveAlphaBlending
 
 export default class CloudDome extends THREE.Object3D {
   load (size = 4) {
@@ -19,7 +30,7 @@ export default class CloudDome extends THREE.Object3D {
       const material = new THREE.MeshLambertMaterial({
         map: cloudMap,
         transparent: true,
-        opacity: 0.4,
+        opacity: 0.3,
         depthWrite: false
       })
 
